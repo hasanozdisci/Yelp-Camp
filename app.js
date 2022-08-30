@@ -3,12 +3,13 @@ const app = express();
 const path = require("path");
 const ejsMate = require("ejs-mate");
 const Joi = require("joi");
-const {campgroundSchema} = require('./schemas.js')
+const { campgroundSchema, reviewSchema } = require("./schemas.js");
 const catchAsync = require("./utils/catchAsync");
 const ExpressError = require("./utils/ExpressError");
 const mongoose = require("mongoose");
 const Campground = require("./models/camground");
 const methodOverride = require("method-override");
+const Review = require("./models/review");
 
 //connection and error handling
 mongoose
@@ -32,9 +33,20 @@ app.use(express.urlencoded({ extended: true }));
 //FOR PUT AND DELETE METHODS(METHOD OVERRİDE)
 app.use(methodOverride("_method"));
 
-//SERVER SIDE ERRORS WITH JOI
+//SERVER SIDE ERRORS FOR CAMPGROUNDS WITH JOI
 const validateCampground = (req, res, next) => {
   const { error } = campgroundSchema.validate(req.body);
+  if (error) {
+    const msg = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(msg, 400);
+  } else {
+    next();
+  }
+};
+
+//SERVER SIDE ERRORS FOR REVIEWS WITH JOI
+const validateReview = (req, res, next) => {
+  const { error } = reviewSchema.validate(req.body);
   if (error) {
     const msg = error.details.map((el) => el.message).join(",");
     throw new ExpressError(msg, 400);
@@ -80,7 +92,8 @@ app.get(
   "/campgrounds/:id",
   catchAsync(async (req, res) => {
     const { id } = req.params;
-    const campground = await Campground.findById(id);
+    const campground = await Campground.findById(id).populate('reviews');
+    // console.log(campground)
     res.render("campgrounds/show", { campground });
   })
 );
@@ -115,6 +128,19 @@ app.delete(
     const { id } = req.params;
     await Campground.findByIdAndDelete(id);
     res.redirect("/campgrounds");
+  })
+);
+
+// CAMPGROUND REVIEWS
+app.post(
+  "/campgrounds/:id/reviews", validateReview,
+  catchAsync(async (req, res) => {
+    const campground = await Campground.findById(req.params.id);
+    const review = new Review(req.body.review);
+    campground.reviews.push(review);
+    await review.save();
+    await campground.save();
+    res.redirect(`/campgrounds/${campground._id}`);
   })
 );
 
