@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const path = require("path");
 const ejsMate = require("ejs-mate");
+const session = require("express-session");
+const flash = require("connect-flash");
 const ExpressError = require("./utils/ExpressError");
 const mongoose = require("mongoose");
 const methodOverride = require("method-override");
@@ -33,6 +35,28 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 // FOR STATIC ASSEST
 app.use(express.static(path.join(__dirname, "public")));
+// SESSION CONFIG
+const sessionConfig = {
+  secret: "thisshouldbeabettersecret!",
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    httpOnly: true,
+    expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  },
+};
+app.use(session(sessionConfig));
+
+//SESSION FLASH
+app.use(flash());
+
+//FLASH MIDDLEWARE
+app.use((req, res, next) => {
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  next();
+});
 
 //ROUTES MIDDLEWARE
 app.use("/campgrounds", campgrounds);
