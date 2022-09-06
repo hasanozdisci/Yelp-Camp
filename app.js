@@ -7,10 +7,14 @@ const flash = require("connect-flash");
 const ExpressError = require("./utils/ExpressError");
 const mongoose = require("mongoose");
 const methodOverride = require("method-override");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user");
 
 //ROUTES
-const campgrounds = require("./routes/campgrounds");
-const review = require("./routes/reviews");
+const campgroundRoutes = require("./routes/campgrounds");
+const reviewRoutes = require("./routes/reviews");
+const userRoutes = require("./routes/users");
 
 //connection and error handling
 mongoose
@@ -46,21 +50,40 @@ const sessionConfig = {
     maxAge: 1000 * 60 * 60 * 24 * 7,
   },
 };
-app.use(session(sessionConfig));
 
-//SESSION FLASH
+app.use(session(sessionConfig));
+// SESSION FLASH
 app.use(flash());
 
-//FLASH MIDDLEWARE
+// PASSPORT MIDDLEWARE
+app.use(passport.initialize());
+app.use(passport.session());
+// use static authenticate method of model in LocalStrategy
+passport.use(new LocalStrategy(User.authenticate()));
+// use static serialize and deserialize of model for passport session support
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+// MIDDLEWARE which we can access everywhere
 app.use((req, res, next) => {
+  console.log(req.session)
+  res.locals.currentUser = req.user;
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   next();
 });
 
+// FAKE USER WITH PASSPORT
+// app.get("/fakeUser", async (req, res) => {
+//   const user = new User({ email: "hasanbasan@gmail.com", username: "hasan" });
+//   const newUser = await User.register(user, "chicken");
+//   res.send(newUser);
+// });
+
 //ROUTES MIDDLEWARE
-app.use("/campgrounds", campgrounds);
-app.use("/campgrounds/:id/reviews", review);
+app.use("/campgrounds", campgroundRoutes);
+app.use("/campgrounds/:id/reviews", reviewRoutes);
+app.use("/", userRoutes);
 
 // HOME PAGE
 app.get("/", (req, res) => {
