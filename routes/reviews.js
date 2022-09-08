@@ -8,7 +8,7 @@ const catchAsync = require("../utils/catchAsync");
 const ExpressError = require("../utils/ExpressError");
 
 const Review = require("../models/review");
-const Campground = require("../models/camground");
+const Campground = require("../models/campground");
 
 //SERVER SIDE ERRORS FOR REVIEWS WITH JOI
 const validateReview = (req, res, next) => {
