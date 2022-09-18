@@ -18,15 +18,19 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 const mongoSanitize = require("express-mongo-sanitize");
 const helmet = require("helmet");
+const { MongoStore } = require("connect-mongo");
+const MongoDBStore = require("connect-mongo")(session);
 
 //ROUTES
 const campgroundRoutes = require("./routes/campgrounds");
 const reviewRoutes = require("./routes/reviews");
 const userRoutes = require("./routes/users");
 
-//connection and error handling
+//! MONGO ATLAS CONNECTION
+const dbUrl = "mongodb://127.0.0.1:27017/yelp-camp";
+
 mongoose
-  .connect("mongodb://127.0.0.1:27017/yelp-camp")
+  .connect(dbUrl)
   .then(() => {
     console.log("Database connected");
   })
@@ -50,8 +54,20 @@ app.use(express.static(path.join(__dirname, "public")));
 // MONGO SQL INJECTION
 app.use(mongoSanitize());
 
+// SESSION STORE
+const store = new MongoDBStore({
+  url: dbUrl,
+  secret: "thisshouldbeasecret!",
+  touchAfter: 24 * 60 * 60,
+});
+
+store.on("error", function(e) {
+  console.log("SESSION STORE ERROR", e)
+})
+
 // SESSION CONFIG
 const sessionConfig = {
+  store: store,
   name: "session",
   secret: "thisshouldbeabettersecret!",
   resave: false,
@@ -63,6 +79,11 @@ const sessionConfig = {
     maxAge: 1000 * 60 * 60 * 24 * 7,
   },
 };
+
+app.use(session(sessionConfig));
+// SESSION FLASH
+app.use(flash());
+
 // HELMET
 const scriptSrcUrls = [
   "https://stackpath.bootstrapcdn.com/",
@@ -72,14 +93,13 @@ const scriptSrcUrls = [
   "https://cdnjs.cloudflare.com/",
   "https://cdn.jsdelivr.net",
 ];
-//This is the array that needs added to
 const styleSrcUrls = [
   "https://kit-free.fontawesome.com/",
+  "https://stackpath.bootstrapcdn.com/",
   "https://api.mapbox.com/",
   "https://api.tiles.mapbox.com/",
   "https://fonts.googleapis.com/",
   "https://use.fontawesome.com/",
-  "https://cdn.jsdelivr.net",
 ];
 const connectSrcUrls = [
   "https://api.mapbox.com/",
@@ -109,9 +129,7 @@ app.use(
   })
 );
 
-app.use(session(sessionConfig));
-// SESSION FLASH
-app.use(flash());
+
 
 // PASSPORT MIDDLEWARE
 app.use(passport.initialize());

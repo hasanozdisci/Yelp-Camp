@@ -10,7 +10,6 @@ module.exports.register = async (req, res, next) => {
     const { email, username, password } = req.body;
     const user = new User({ email, username });
     const registeredUser = await User.register(user, password);
-    console.log(registeredUser);
     //kayıttan sonra otomatik giriş
     req.login(registeredUser, (err) => {
       if (err) return next(err);
