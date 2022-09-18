@@ -27,7 +27,8 @@ const reviewRoutes = require("./routes/reviews");
 const userRoutes = require("./routes/users");
 
 //! MONGO ATLAS CONNECTION
-const dbUrl = "mongodb://127.0.0.1:27017/yelp-camp";
+const dbUrl = process.env.DB_URL || "mongodb://127.0.0.1:27017/yelp-camp";
+
 
 mongoose
   .connect(dbUrl)
@@ -54,10 +55,12 @@ app.use(express.static(path.join(__dirname, "public")));
 // MONGO SQL INJECTION
 app.use(mongoSanitize());
 
+const secret = process.env.SECRET || 'thisshouldbeabettersecret!'
+
 // SESSION STORE
 const store = new MongoDBStore({
   url: dbUrl,
-  secret: "thisshouldbeasecret!",
+  secret: secret,
   touchAfter: 24 * 60 * 60,
 });
 
@@ -69,7 +72,7 @@ store.on("error", function(e) {
 const sessionConfig = {
   store: store,
   name: "session",
-  secret: "thisshouldbeabettersecret!",
+  secret: secret,
   resave: false,
   saveUninitialized: true,
   cookie: {
