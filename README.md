@@ -1,5 +1,8 @@
 # Yelp Camp
 
+## Description
+- YelpCamp is a website where users can create and review campgrounds. In order to review or create a campground, you must have an account.
+
 ## Demo
 - You can see a complete working example [here](https://infinite-waters-74087.herokuapp.com). Or you can run the demo on your local machine, please follow the instructions in [Getting Started](#getting-started).
 
